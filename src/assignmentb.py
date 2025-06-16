@@ -113,26 +113,43 @@ class EmailPreprocessor:
         
         return text
 
-# ## 3. Sample Data for Testing
-# Since we don't have the full SpamAssassin dataset, let's create sample data based on provided examples
+# ## 3. Load Data from Folders
+# Load actual SpamAssassin dataset from data folder
 
-sample_emails = [
-    # Ham emails
-    ("From: Robert Elz <kre@munnari.OZ.AU> Subject: Re: New Sequences Window I'm hoping that all people with no additional sequences will notice are purely cosmetic changes. Well, first, when exmh starts, I get can't read flist error.", 0),
+def load_dataset():
+    """
+    Load emails from easy_ham_2 and spam_2 folders
     
-    ("From: John Moran <arronax@eircom.net> Subject: RE: Optimizing for Pentium gcc, glibc and binutils, which the lfs site says not to optimise, already determines what system you're compiling on, and optimises itself to that.", 0),
+    Returns:
+        Tuple of (emails_list, labels_list)
+    """
+    # Define data paths
+    data_folder = "data"
+    ham_folder = os.path.join(data_folder, "easy_ham_2")
+    spam_folder = os.path.join(data_folder, "spam_2")
     
-    # Spam emails
-    ("Subject: STOP THE MLM INSANITY You are receiving this letter because you have expressed an interest in receiving information about online business opportunities. MULTI-LEVEL MARKETING IS A HUGE MISTAKE If you've been burned, betrayed, and back-stabbed by multi-level marketing, MLM, then please read this letter. FREE money making opportunity!", 1),
+    print(f"Loading ham emails from: {ham_folder}")
+    print(f"Loading spam emails from: {spam_folder}")
     
-    ("Subject: Accepting Credit Cards If you want a your own no hassle Credit Card Merchant Account with absolutely no setup fees. Good credit, bad credit, no credit -- no problem! Visa, MasterCard, American Express FREE! We can handle ANY business! Don't lose your customers!", 1),
+    # Load ham and spam emails
+    ham_emails = load_emails_from_directory(ham_folder, 0)  # 0 = ham
+    spam_emails = load_emails_from_directory(spam_folder, 1)  # 1 = spam
     
-    # Additional sample data to improve training
-    ("From: admin@company.com Subject: Meeting tomorrow Hi team, please remember we have the quarterly meeting tomorrow at 2 PM in conference room A. Please bring your reports.", 0),
-    ("Subject: Urgent business proposal Dear friend, I am writing to inform you about a business opportunity that will make you rich. Send me your bank details immediately!", 1),
-    ("Subject: Linux kernel update The new Linux kernel version 5.4 has been released with improved security features and better hardware support.", 0),
-    ("Subject: Make money fast!!! URGENT!!! You have been selected to receive $1000000!!! Click here now!!! Limited time offer!!! Act now!!!", 1),
-]
+    print(f"Loaded {len(ham_emails)} ham emails")
+    print(f"Loaded {len(spam_emails)} spam emails")
+    
+    # Combine all emails
+    all_emails = ham_emails + spam_emails
+    
+    # Shuffle the data
+    np.random.seed(42)
+    np.random.shuffle(all_emails)
+    
+    # Separate features and labels
+    emails = [email[0] for email in all_emails]
+    labels = [email[1] for email in all_emails]
+    
+    return emails, labels
 
 # ## 4. Model Training and Evaluation
 
@@ -191,17 +208,13 @@ def main():
     print("Spam Filter Assignment - Data Science I")
     print("=" * 50)
     
-    # For this demo, we'll use the sample data
-    # In real implementation, you would load from SpamAssassin dataset directories
-    print("Loading sample email data...")
-    
-    # Separate features and labels
-    emails = [email[0] for email in sample_emails]
-    labels = [email[1] for email in sample_emails]
-    
+    # 1) Load from your SpamAssassin folders under data/
+    print("Loading email data from disk...")
+    emails, labels = load_dataset()
     print(f"Total emails: {len(emails)}")
-    print(f"Ham emails: {labels.count(0)}")
+    print(f"Ham emails:  {labels.count(0)}")
     print(f"Spam emails: {labels.count(1)}")
+
     
     # Initialize preprocessor with hyperparameters
     preprocessor = EmailPreprocessor(
@@ -295,8 +308,8 @@ def experiment_with_hyperparameters():
         {'strip_headers': True, 'to_lowercase': True, 'remove_punctuation': False, 'replace_urls': True, 'replace_numbers': True},
     ]
     
-    emails = [email[0] for email in sample_emails]
-    labels = [email[1] for email in sample_emails]
+    # load the same data as in main()
+    emails, labels = load_dataset()
     
     best_config = None
     best_score = 0
